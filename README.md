@@ -36,11 +36,13 @@ ships with local agents off, and turning them on means pasting a token into its 
 
 ## What is here
 
-| Path                              | What                                                                |
-| --------------------------------- | ------------------------------------------------------------------- |
-| `skills/page-scanner/SKILL.md`    | The skill: the workflow, the options, what fails and what to say    |
-| `skills/page-scanner/references/` | The full argument tables for the MCP tools and the command line     |
-| `.claude-plugin/marketplace.json` | The Claude Code marketplace, one plugin: this skill plus the server |
+| Path                              | What                                                                  |
+| --------------------------------- | --------------------------------------------------------------------- |
+| `skills/page-scanner/SKILL.md`    | The skill: the workflow, the options, what fails and what to say      |
+| `skills/page-scanner/references/` | The full argument tables for the MCP tools and the command line       |
+| `.claude-plugin/plugin.json`      | The Claude Code plugin manifest: this tree is the plugin              |
+| `.mcp.json`                       | The MCP server the plugin registers, `npx -y @page-scanner/mcp serve` |
+| `.claude-plugin/marketplace.json` | The marketplace that lists the plugin, so `marketplace add` works     |
 
 ## Where it comes from
 

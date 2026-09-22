@@ -11,17 +11,9 @@
       "homepage": "https://docs.pagescanner.app/mcp",
       "repository": "https://github.com/sbd530/page-scanner-skills",
       "license": "Apache-2.0",
-      "keywords": ["pdf", "chrome", "screenshot", "capture", "web-page"],
+      "keywords": ["pdf", "chrome", "screenshot", "capture", "web-page", "mcp"],
       "category": "productivity",
-      "source": "./",
-      "strict": false,
-      "skills": ["./skills/page-scanner"],
-      "mcpServers": {
-        "page-scanner": {
-          "command": "npx",
-          "args": ["-y", "@page-scanner/mcp", "serve"]
-        }
-      }
+      "source": "./"
     }
   ]
 }
