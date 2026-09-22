@@ -1,0 +1,27 @@
+{
+  "name": "page-scanner-skills",
+  "owner": { "name": "sbd530", "url": "https://github.com/sbd530" },
+  "description": "Page Scanner: capture a web page from your own Chrome as a PDF whose text stays text.",
+  "plugins": [
+    {
+      "name": "page-scanner",
+      "description": "The Page Scanner MCP server, which lists your Chrome tabs and captures one to PDF, PNG or JPEG, and the skill that tells the agent when and how to use it.",
+      "version": "1.0.0",
+      "author": { "name": "sbd530", "url": "https://github.com/sbd530" },
+      "homepage": "https://docs.pagescanner.app/mcp",
+      "repository": "https://github.com/sbd530/page-scanner-skills",
+      "license": "Apache-2.0",
+      "keywords": ["pdf", "chrome", "screenshot", "capture", "web-page"],
+      "category": "productivity",
+      "source": "./",
+      "strict": false,
+      "skills": ["./skills/page-scanner"],
+      "mcpServers": {
+        "page-scanner": {
+          "command": "npx",
+          "args": ["-y", "@page-scanner/mcp", "serve"]
+        }
+      }
+    }
+  ]
+}
