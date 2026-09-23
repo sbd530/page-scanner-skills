@@ -27,25 +27,50 @@ Tabs carry the `windowId` they belong to, and windows say which is focused.
 
 ### `scan_page`
 
-| Argument        | Meaning                                                                                                                                |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `browserId`     | Which browser. Optional when only one is connected.                                                                                    |
-| `tabId`         | A tab from `list_tabs`. Give this or `url`, not both.                                                                                  |
-| `url`           | Opens a background tab there, captures it, closes it again.                                                                            |
-| `windowId`      | Which window to open `url` in. Ignored with `tabId`.                                                                                   |
-| `format`        | `pdf` (default), `png`, `jpeg`.                                                                                                        |
-| `pageSize`      | PDF only. `a4` (default) and `letter` slice onto printable sheets with a half-inch margin; `auto` is one page the size of the capture. |
-| `quality`       | JPEG only, 0.1 to 1.                                                                                                                   |
-| `videoHandling` | `frame` keeps a video's paused frame, `blank` leaves its area empty.                                                                   |
-| `colorScheme`   | Which of a page's two themes to capture: `auto` (default, whatever the browser shows), `light`, `dark`.                                |
-| `captureWidth`  | Lay the page out at a sheet's width first, so the PDF prints at 1:1: `window` (default), `a4`, `letter`.                               |
-| `openEditor`    | Also leave the capture open in a Page Scanner editor tab.                                                                              |
-| `outputPath`    | A file, or a directory to keep the suggested name. Defaults to the cwd.                                                                |
-| `waitSeconds`   | How long to wait for a browser to connect. 0 fails immediately.                                                                        |
+| Argument        | Meaning                                                                                                                                                                                                                                                               |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `browserId`     | Which browser. Optional when only one is connected.                                                                                                                                                                                                                   |
+| `tabId`         | A tab from `list_tabs`. Give one of `tabId`, `url` or `urls`.                                                                                                                                                                                                         |
+| `url`           | Opens a background tab there, captures it, closes it again.                                                                                                                                                                                                           |
+| `urls`          | Up to 50 addresses, captured one at a time into `outputPath`, which is then a directory. A page that fails is reported and the rest are captured.                                                                                                                     |
+| `windowId`      | Which window to open `url` in. Ignored with `tabId`.                                                                                                                                                                                                                  |
+| `format`        | `pdf` (default), `png`, `jpeg`.                                                                                                                                                                                                                                       |
+| `pageSize`      | PDF only. `a4` (default) and `letter` slice onto printable sheets with a half-inch margin; `auto` is one page the size of the capture.                                                                                                                                |
+| `quality`       | JPEG only, 0.1 to 1.                                                                                                                                                                                                                                                  |
+| `videoHandling` | `frame` keeps a video's paused frame, `blank` leaves its area empty.                                                                                                                                                                                                  |
+| `colorScheme`   | Which of a page's two themes to capture: `auto` (default, whatever the browser shows), `light`, `dark`.                                                                                                                                                               |
+| `captureWidth`  | Lay the page out at a sheet's width first, so the PDF prints at 1:1: `window` (default), `a4`, `letter`.                                                                                                                                                              |
+| `openEditor`    | Also leave the capture open in a Page Scanner editor tab.                                                                                                                                                                                                             |
+| `outputPath`    | A file, or a directory to keep the suggested name. Defaults to the cwd.                                                                                                                                                                                               |
+| `markdown`      | The page as Markdown, read from the page rather than the PDF: `inline` returns it in the result, `beside` writes a `.md` next to the file, `only` writes the `.md` and no file. Adds `page`: title, address, capture time, language, headings. Pictures are left out. |
+| `fileName`      | The file name inside `outputPath`, as a template: `{n}` (place in `urls`), `{host}`, `{name}` (the suggested name), `{date}`, `{time}`, `{ext}` (added when left out). A `/` makes a subdirectory.                                                                    |
+| `waitSeconds`   | How long to wait for a browser to connect. 0 fails immediately.                                                                                                                                                                                                       |
 
 Returns the absolute `path`, `width` and `height` in CSS pixels, `mode` (`vector` or `raster`),
 `selectableText`, and `truncated` (`null` when whole; otherwise what the page measured, what was
-captured, and a sentence naming the gap).
+captured, and a sentence naming the gap). With `urls`: `results`, one per page in order, each
+`ok: true` with that page's result and `url`, or `ok: false` with `error.code` and `error.message`;
+and `written` and `failed` counts.
+
+With `markdown`, the result also has `page`: `title`, `url`, `capturedAt` (ISO 8601), `language`
+(the page's own `lang`, or `null`) and `headings` (`level` and `text`, in order), plus
+`markdownPath` where the `.md` was written, or `markdown` with the text itself for `inline`. For
+`only`, `path` is the `.md`. An extension older than this feature sends no text, and the call
+fails with a sentence saying to update it.
+
+### `diff_captures`
+
+| Argument     | Meaning                                                                                                      |
+| ------------ | ------------------------------------------------------------------------------------------------------------ |
+| `oldPath`    | The older capture: a `.md` from `markdown` `beside` or `only`, a PNG, or a PDF with its `.md` beside it.     |
+| `newPath`    | The newer capture of the same page, of the same kind.                                                        |
+| `outputPath` | For two PNGs, where to write the newer one with the changed regions outlined. Defaults to `<name>.diff.png`. |
+
+Returns `kind` (`text` or `visual`) and `changed`. For text: `added` and `removed` line counts,
+`hunks`, the same as a `unified` diff, each side's `source` and `captured` from its front matter,
+and `sameAddress`. For pictures: `regions` (`x`, `y`, `width`, `height` in pixels of the newer
+capture), `changedFraction`, both sides' sizes, and `path`, the outlined picture, or `null` when
+nothing changed. No browser is needed: both captures are already on disk.
 
 ## Command line
 
@@ -54,7 +79,9 @@ page-scanner pair     [--port <n>] [--rotate] [--wait <s>=120] [--no-wait] [--js
 page-scanner status   [--json]
 page-scanner browsers [--json]
 page-scanner tabs     [--browser <id|label>] [--wait <s>=30] [--json]
-page-scanner scan     (--url <u> | --tab <id>) [--window <id>] [--browser <id|label>]
+page-scanner scan     (--url <u>... | --urls <file|-> | --tab <id>) [--window <id>]
+                      [--name <template>] [--markdown beside|only]
+                      [--browser <id|label>]
                       [--format pdf|png|jpeg=pdf] [--page-size auto|a4|letter=a4]
                       [--quality <0-1>] [--video frame|blank]
                       [--scheme auto|light|dark]

@@ -1,6 +1,6 @@
 ---
 name: page-scanner
-description: Capture a web page from the user's own signed-in Chrome as a PDF whose text stays selectable and searchable, or as a PNG or JPEG, through the Page Scanner extension's MCP tools (list_browsers, list_tabs, scan_page) or the page-scanner command. Use when the user asks to save, scan, capture, archive or print a web page or an open tab to PDF, wants a full-page screenshot, or needs a document from a page behind a login.
+description: Capture a web page from the user's own signed-in Chrome as a PDF whose text stays selectable and searchable, as a PNG or JPEG, or as Markdown text, through the Page Scanner extension's MCP tools (list_browsers, list_tabs, scan_page, diff_captures) or the page-scanner command. Use when the user asks to save, scan, capture, archive or print a web page or an open tab to PDF, wants a full-page screenshot, needs a document from a page behind a login, wants a list of pages captured, once or on a schedule, or wants to know what changed on a page since an earlier capture.
 license: Apache-2.0
 compatibility: Google Chrome with the Page Scanner extension, Node.js 24 or newer, and either the @page-scanner/mcp server registered with the agent or the @page-scanner/cli command (npx works for both). Local machine only; the connection is to 127.0.0.1.
 metadata:
@@ -14,7 +14,7 @@ metadata:
 Page Scanner captures a whole web page, top to bottom, in the Chrome the user is already signed in
 to, and writes a file: a PDF whose text is real text, or a PNG or JPEG. The capture goes through
 Chrome's own print pipeline, so a page behind a login is captured as the user sees it, and no
-second browser is started. You reach it through four MCP tools, or the `page-scanner` command when
+second browser is started. You reach it through five MCP tools, or the `page-scanner` command when
 you only have a shell. Both use the same pairing and the same background daemon.
 
 ## 1. Check the connection first
@@ -48,7 +48,14 @@ looking at: scrolled, filtered, logged in): call `list_tabs`, match the title or
 **An address:** pass `url` to `scan_page`. It opens a background tab, captures it, and closes it
 again, including when the capture fails. It still runs in the user's Chrome, so a URL behind a login
 works if they are logged in there. Use `windowId` from `list_tabs` if it matters which window it
-opens in. Give `tabId` or `url`, not both.
+opens in.
+
+**Several addresses:** pass `urls` (up to 50) and an `outputPath` directory. They are captured one
+after another, and `fileName` names each file from a template, such as `"{n}-{host}"`. For a list
+the user wants captured on a schedule, give them the `page-scanner scan --urls <file>` command and
+point them at the documentation's scheduling section rather than running it yourself each time.
+
+Give exactly one of `tabId`, `url` or `urls`.
 
 ## 3. Scan
 
@@ -63,6 +70,8 @@ opens in. Give `tabId` or `url`, not both.
 | The dark theme of a page that has two     | `colorScheme: "dark"` (or `"light"`)                                           |
 | A video's area empty rather than a frame  | `videoHandling: "blank"`                                                       |
 | The user to crop or mark it up afterwards | `openEditor: true`; you cannot crop, the editor can                            |
+| To read the page's text yourself          | `markdown: "inline"`, far more reliable than reading the PDF                   |
+| The text as a `.md` file for the user     | `markdown: "beside"`, or `"only"` for no PDF                                   |
 | The file somewhere specific               | `outputPath`: a file path, or a directory to keep the browser's suggested name |
 
 `outputPath` defaults to the current working directory. When the user named a place, pass an
@@ -71,6 +80,9 @@ to 55 % on A4, which puts 16 px body text at 6.5 pt; laid out at A4 width first 
 
 ## 4. Read the result before you report
 
+For `urls`, read each entry of `results`: report the pages that failed by address and reason, not
+just the count, since a page that failed may need the user to log in or the address fixed.
+
 The result carries the absolute `path`, `width` and `height` in CSS pixels, `mode`,
 `selectableText` and `truncated`.
 
@@ -78,9 +90,20 @@ The result carries the absolute `path`, `width` and `height` in CSS pixels, `mod
   false by nature.
 - `truncated` is `null` when the page was captured whole. Otherwise it says what the page measured,
   what was captured and what is missing: a page over 60,000 CSS pixels on a side is captured up to
-  there and no further, because an infinite-scroll page has no bottom. Say so; do not present the
-  file as complete.
+  there and no further, because an infinite-scroll page has no bottom (the extension's settings
+  page can raise the height's limit to 120,000 or 240,000). Say so; do not present the file as
+  complete.
 - Quote the path back. The file is on disk; nothing is returned inline.
+
+## 5. What changed since last time
+
+To tell the user what changed on a page since an earlier capture, capture it again the same way,
+with `markdown: "beside"` (or `"only"`), and call `diff_captures` with the older and the newer
+`.md`. Report `changed`, and when it is true, the passages from `unified` in plain words, not the
+diff syntax. Two PNGs work too, and give a picture with the changed regions outlined, but content
+that moved shows as changed below the move, so prefer the text. When the user wants this on a
+schedule, give them `page-scanner scan --urls` with `--markdown beside` and `page-scanner diff`,
+which exits 1 when something changed.
 
 ## What fails, and what to say
 
