@@ -74,8 +74,9 @@ Give exactly one of `tabId`, `url` or `urls`.
 | The text as a `.md` file for the user     | `markdown: "beside"`, or `"only"` for no PDF                                   |
 | The file somewhere specific               | `outputPath`: a file path, or a directory to keep the browser's suggested name |
 
-`outputPath` defaults to the current working directory. When the user named a place, pass an
-absolute path. `captureWidth` matters for printing: a page captured at a 1280 px window is scaled
+`outputPath` defaults to the current working directory, or to `~/Downloads` where that is `/` or
+cannot be written, which is the case under Claude Desktop; a leading `~` is the home directory.
+When the user named a place, pass that path. `captureWidth` matters for printing: a page captured at a 1280 px window is scaled
 to 55 % on A4, which puts 16 px body text at 6.5 pt; laid out at A4 width first it lands at 12 pt.
 
 ## 4. Read the result before you report
