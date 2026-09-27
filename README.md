@@ -4,11 +4,13 @@ The agent skill and the Claude Code plugin for [Page Scanner](https://pagescanne
 Chrome extension that captures a whole web page from your own signed-in Chrome as a PDF whose text
 stays selectable and searchable, or as a PNG or JPEG.
 
-The skill is a `SKILL.md` in the [Agent Skills](https://agentskills.io) format. It tells an agent
-when to reach for Page Scanner and how: check the pairing first, capture the tab you are looking at
-rather than reopen a page you are logged into, which options print well, what `truncated` means,
-and what Chrome's debugger bar is. The same file works in every agent that reads the standard:
-Claude Code, Codex, Cursor, GitHub Copilot, Gemini CLI and the rest.
+Two skills, each a `SKILL.md` in the [Agent Skills](https://agentskills.io) format. `page-scanner`
+tells an agent when to reach for Page Scanner and how: check the connection first and run `install`
+when nothing is set up, capture the tab you are looking at rather than reopen a page you are logged
+into, which options print well, what `truncated` means, and what Chrome's debugger bar is.
+`design-md` writes a site's design system down as a `DESIGN.md` from what Page Scanner's
+design extract measured on the live site. Both work in every agent that reads the
+standard: Claude Code, Codex, Cursor, GitHub Copilot, Gemini CLI and the rest.
 
 ## Install
 
@@ -31,8 +33,9 @@ An agent that speaks MCP still needs the server registered, which is one line pe
 [install page](https://docs.pagescanner.app/mcp/install); an agent with only a shell uses the
 `page-scanner` command, and the skill covers both.
 
-Then [pair Chrome](https://docs.pagescanner.app/mcp/pairing), once per profile: the extension
-ships with local agents off, and turning them on means pasting a token into its settings page.
+Then [connect Chrome](https://docs.pagescanner.app/mcp/pairing), once per profile: the extension
+ships with local agents off. Ask the agent to set up Page Scanner, which runs `install`, then press
+**Connect** in the extension's settings and allow Chrome's prompt.
 
 ## What is here
 
@@ -40,6 +43,8 @@ ships with local agents off, and turning them on means pasting a token into its 
 | --------------------------------- | --------------------------------------------------------------------- |
 | `skills/page-scanner/SKILL.md`    | The skill: the workflow, the options, what fails and what to say      |
 | `skills/page-scanner/references/` | The full argument tables for the MCP tools and the command line       |
+| `skills/design-md/SKILL.md`       | A second skill: a site's DESIGN.md written from what was measured     |
+| `skills/design-md/references/`    | The DESIGN.md template it fills                                       |
 | `.claude-plugin/plugin.json`      | The Claude Code plugin manifest: this tree is the plugin              |
 | `.mcp.json`                       | The MCP server the plugin registers, `npx -y @page-scanner/mcp serve` |
 | `.claude-plugin/marketplace.json` | The marketplace that lists the plugin, so `marketplace add` works     |

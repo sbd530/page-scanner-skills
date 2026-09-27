@@ -1,6 +1,6 @@
 ---
 name: page-scanner
-description: Capture a web page from the user's own signed-in Chrome as a PDF whose text stays selectable and searchable, as a PNG or JPEG, or as Markdown text, through the Page Scanner extension's MCP tools (list_browsers, list_tabs, scan_page, diff_captures) or the page-scanner command. Use when the user asks to save, scan, capture, archive or print a web page or an open tab to PDF, wants a full-page screenshot, needs a document from a page behind a login, wants a list of pages captured, once or on a schedule, or wants to know what changed on a page since an earlier capture.
+description: Capture a web page from the user's own signed-in Chrome as a PDF whose text stays selectable and searchable, as a PNG or JPEG, or as Markdown text, through the Page Scanner extension's MCP tools (list_browsers, list_tabs, scan_page, diff_captures, extract_design, install) or the page-scanner command. Use when the user asks to set up Page Scanner, or to save, scan, capture, archive or print a web page or an open tab to PDF, wants a full-page screenshot, needs a document from a page behind a login, wants a list of pages captured, once or on a schedule, or wants to know what changed on a page since an earlier capture, or wants a page's design tokens, a consistency audit or a contrast check.
 license: Apache-2.0
 compatibility: Google Chrome with the Page Scanner extension, Node.js 24 or newer, and either the @page-scanner/mcp server registered with the agent or the @page-scanner/cli command (npx works for both). Local machine only; the connection is to 127.0.0.1.
 metadata:
@@ -14,30 +14,37 @@ metadata:
 Page Scanner captures a whole web page, top to bottom, in the Chrome the user is already signed in
 to, and writes a file: a PDF whose text is real text, or a PNG or JPEG. The capture goes through
 Chrome's own print pipeline, so a page behind a login is captured as the user sees it, and no
-second browser is started. You reach it through five MCP tools, or the `page-scanner` command when
+second browser is started. You reach it through seven MCP tools, or the `page-scanner` command when
 you only have a shell. Both use the same pairing and the same background daemon.
 
 ## 1. Check the connection first
 
 Call `list_browsers` (shell: `npx @page-scanner/cli browsers --json`). It lists the Chrome
-profiles that are paired and connected right now, each with the name the user gave it.
+profiles that are connected right now, each with the name the user gave it.
 
 - **One browser listed:** go ahead; you never need `browserId`.
 - **Several listed:** every later call takes `browserId`. Ask which profile if the task does not
   say; a work profile and a personal profile are logged into different things.
-- **None listed:** the user has to pair, which is a deliberate act on their side. Tell them to run
-  `npx @page-scanner/cli pair` in a terminal, then open the extension's settings page (the gear in
-  the editor toolbar, or `chrome://extensions`, Details, Extension options), and under **Local
-  agents** name the browser, paste the port and token, and press **Connect**. Prefer that over the
-  `pair` tool: the tool returns the token to you, which puts a secret in the transcript. Use the
-  tool only when the user asks you to.
+- **None listed:** set Page Scanner up, then hand the last step to the user. Run the `install`
+  tool (shell: `npx @page-scanner/cli install`). It sets up the helper Chrome starts to reach this
+  machine, in every Chromium browser here, and returns no secret, so it is safe for you to run.
+  Then tell the user to open the extension's settings (the gear in the editor toolbar, or
+  `chrome://extensions`, Details, Extension options), go to **Local Agents**, press **Connect**
+  and allow Chrome's prompt. You cannot do that part: an agent cannot press a button in the
+  extension or answer Chrome's permission prompt. Then call `list_browsers` again.
+- **Still none after that:** if the settings page has no **Connect through** choice, the
+  extension is older than the helper; ask the user to update it from the Chrome Web Store, or use
+  the older pairing: the user runs `npx @page-scanner/cli pair` in a terminal, sets **Connect
+  through** to **A port and a token**, pastes the port and token, and presses **Connect**. Prefer
+  that over the `pair` tool, which returns the token to you and puts a secret in the transcript;
+  use the tool only when the user asks you to.
 - **Empty right after a quiet spell:** Chrome retires the extension's service worker after about
   thirty seconds of silence and it dials back in when something wakes it. `list_tabs` and
   `scan_page` wait up to `waitSeconds` (default 30) for that; do not report "not connected" from
-  one empty `list_browsers` if the user just paired.
+  one empty `list_browsers` if the user just connected.
 
-Never run `pair` with `rotate` on your own. It invalidates the token in every browser and the user
-has to paste a new one everywhere.
+Never run `pair` with `rotate` on your own. It invalidates the token in every browser paired by
+hand, and the user has to paste a new one everywhere.
 
 ## 2. Pick the page
 
@@ -61,23 +68,28 @@ Give exactly one of `tabId`, `url` or `urls`.
 
 `scan_page` with the target and, as the task needs them:
 
-| Want                                      | Set                                                                            |
-| ----------------------------------------- | ------------------------------------------------------------------------------ |
-| A PDF to read, search or copy from        | nothing; `format` defaults to `pdf`                                            |
-| A PDF that prints at full size            | `captureWidth: "a4"` (or `"letter"`) with the same `pageSize`                  |
-| One long page instead of sheets           | `pageSize: "auto"`                                                             |
-| A picture                                 | `format: "png"`, or `"jpeg"` with `quality` 0.1 to 1                           |
-| The dark theme of a page that has two     | `colorScheme: "dark"` (or `"light"`)                                           |
-| A video's area empty rather than a frame  | `videoHandling: "blank"`                                                       |
-| The user to crop or mark it up afterwards | `openEditor: true`; you cannot crop, the editor can                            |
-| To read the page's text yourself          | `markdown: "inline"`, far more reliable than reading the PDF                   |
-| The text as a `.md` file for the user     | `markdown: "beside"`, or `"only"` for no PDF                                   |
-| The file somewhere specific               | `outputPath`: a file path, or a directory to keep the browser's suggested name |
+| Want                                      | Set                                                                             |
+| ----------------------------------------- | ------------------------------------------------------------------------------- |
+| A PDF to read, search or copy from        | nothing; `format` defaults to `pdf`                                             |
+| A PDF that prints at full size            | `captureWidth: "a4"` (or `"letter"`) with the same `pageSize`                   |
+| One long page instead of sheets           | `pageSize: "auto"`                                                              |
+| A picture                                 | `format: "png"`, or `"jpeg"` with `quality` 0.1 to 1                            |
+| The dark theme of a page that has two     | `colorScheme: "dark"` (or `"light"`)                                            |
+| A video's area empty rather than a frame  | `videoHandling: "blank"`                                                        |
+| The user to crop or mark it up afterwards | `openEditor: true`; you cannot crop, the editor can                             |
+| To read the page's text yourself          | `markdown: "inline"`, far more reliable than reading the PDF                    |
+| The text as a `.md` file for the user     | `markdown: "beside"`, or `"only"` for no PDF                                    |
+| The file somewhere specific               | `outputPath`: a file path, or a directory to keep the browser's suggested name  |
+| An article without ads, banners, pop-ups  | `hide: ["ads", "consent", "chat", "overlays"]`, or the ones that are in the way |
+| A record of how the page looked           | `hide: []`: nothing hidden, whatever the user's settings say                    |
 
 `outputPath` defaults to the current working directory, or to `~/Downloads` where that is `/` or
 cannot be written, which is the case under Claude Desktop; a leading `~` is the home directory.
 When the user named a place, pass that path. `captureWidth` matters for printing: a page captured at a 1280 px window is scaled
 to 55 % on A4, which puts 16 px body text at 6.5 pt; laid out at A4 width first it lands at 12 pt.
+
+`hide` takes things out of the page for the scan, so say so when you report: the result's
+`hidden` counts them by kind. Do not hide anything from a page kept as evidence of what it showed.
 
 ## 4. Read the result before you report
 
@@ -106,9 +118,29 @@ that moved shows as changed below the move, so prefer the text. When the user wa
 schedule, give them `page-scanner scan --urls` with `--markdown beside` and `page-scanner diff`,
 which exits 1 when something changed.
 
+## 6. A page's design
+
+When the user wants a page's design tokens (its colors, type, spacing, radii and motion), values
+that were probably meant to be one, or the contrast of its text, call `extract_design` with a
+`tabId`, a `url`, or better, `urls`: a few pages of different kinds from the site (home,
+pricing, docs, a form), since one page shows only part of a design system. When you do not know
+the site's pages, give `crawl` with its home page instead, and it finds them (`maxPages`, 10
+unless you say, and `depth`, 2). If the tool is not listed (an older server) or you only have a shell,
+run `page-scanner design --url <u>`.
+It writes `tokens.json`, `tokens.css`, `tailwind.preset.js`, `audit.md`, `contrast.md` and
+`extract.json` into a directory and returns their paths; with `components: true` (`--components`)
+it also finds the buttons, fields and repeated boxes and writes `components.json`,
+`components.md` and `catalog.pdf`. When the user wants the design written down as a DESIGN.md,
+use the `design-md` skill, which runs this and writes the document. Read `audit.md` and `contrast.md`
+before summing up. Tokens the page declared keep their names (a declared color nothing is drawn
+in is left out, and `unusedDeclared` counts them); the rest are numbered by use
+(`color-1`), and naming them is yours to do if the user wants names. Contrast is measured against
+the background an element paints, so text over a gradient or a picture is listed apart for the
+user to check by eye; say so rather than calling it a pass or a fail.
+
 ## What fails, and what to say
 
-- **No browser, or not paired** (CLI exit 3 or 4): section 1.
+- **No browser, or not set up** (CLI exit 3 or 4): section 1.
 - **DevTools is open on that tab:** only one debugger can attach, so the capture fails. Ask the
   user to close DevTools on it, or capture by `url` instead.
 - **`chrome://` pages, the Chrome Web Store and other extensions' pages** cannot be captured by
@@ -137,6 +169,6 @@ npx @page-scanner/cli scan --url https://example.com/doc --page-width a4 --out .
 ```
 
 Exit codes: 0 success, 1 the browser was reached and the work failed, 2 wrong arguments, 3 no
-usable browser, 4 not paired, 5 the daemon would not start. The full argument tables for both are
+usable browser, 4 not set up, 5 the daemon would not start. The full argument tables for both are
 in [references/arguments.md](references/arguments.md); the product documentation is at
 https://docs.pagescanner.app/mcp.

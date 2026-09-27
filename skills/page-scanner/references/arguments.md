@@ -5,15 +5,27 @@ whole of both; `SKILL.md` has the workflow.
 
 ## MCP tools
 
+### `install`
+
+Sets up Page Scanner's helper for every Chromium browser on the machine and returns which, and
+what the user does next. Returns no secret. An unpacked build loaded in developer mode is found
+and allowed by itself, so never ask the user for an extension id. One optional argument,
+`extensionIds`: more ids to allow by hand. Shell:
+`npx @page-scanner/cli install [--extension-id <id>]... [--browser-dir <dir>]... [--node <path>]`
+(`--node` names the Node the helper runs on; `status` says when that Node has gone, and
+`install` again fixes it), and
+`uninstall` to take it out again.
+
 ### `pair`
 
-Writes the pairing and returns the port and token to paste into Chrome. One optional argument,
-`rotate`, which issues a new token and invalidates the old one in every browser. The token comes
-back to the agent, so prefer having the user run `npx @page-scanner/cli pair` in a terminal.
+The older setup. Writes the pairing and returns the port and token to paste into Chrome. One
+optional argument, `rotate`, which issues a new token and invalidates the old one in every browser
+paired by hand. The token comes back to the agent, so prefer `install`, or having the user run
+`npx @page-scanner/cli pair` in a terminal.
 
 ### `list_browsers`
 
-No arguments. The Chrome profiles paired and connected right now, with the name the user gave each
+No arguments. The Chrome profiles connected right now, with the name the user gave each
 one and how long it has been connected.
 
 ### `list_tabs`
@@ -27,24 +39,25 @@ Tabs carry the `windowId` they belong to, and windows say which is focused.
 
 ### `scan_page`
 
-| Argument        | Meaning                                                                                                                                                                                                                                                               |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `browserId`     | Which browser. Optional when only one is connected.                                                                                                                                                                                                                   |
-| `tabId`         | A tab from `list_tabs`. Give one of `tabId`, `url` or `urls`.                                                                                                                                                                                                         |
-| `url`           | Opens a background tab there, captures it, closes it again.                                                                                                                                                                                                           |
-| `urls`          | Up to 50 addresses, captured one at a time into `outputPath`, which is then a directory. A page that fails is reported and the rest are captured.                                                                                                                     |
-| `windowId`      | Which window to open `url` in. Ignored with `tabId`.                                                                                                                                                                                                                  |
-| `format`        | `pdf` (default), `png`, `jpeg`.                                                                                                                                                                                                                                       |
-| `pageSize`      | PDF only. `a4` (default) and `letter` slice onto printable sheets with a half-inch margin; `auto` is one page the size of the capture.                                                                                                                                |
-| `quality`       | JPEG only, 0.1 to 1.                                                                                                                                                                                                                                                  |
-| `videoHandling` | `frame` keeps a video's paused frame, `blank` leaves its area empty.                                                                                                                                                                                                  |
-| `colorScheme`   | Which of a page's two themes to capture: `auto` (default, whatever the browser shows), `light`, `dark`.                                                                                                                                                               |
-| `captureWidth`  | Lay the page out at a sheet's width first, so the PDF prints at 1:1: `window` (default), `a4`, `letter`.                                                                                                                                                              |
-| `openEditor`    | Also leave the capture open in a Page Scanner editor tab.                                                                                                                                                                                                             |
-| `outputPath`    | A file, or a directory to keep the suggested name. A leading `~` is home. Defaults to the cwd, or `~/Downloads` when that is `/` or read-only, as under Claude Desktop.                                                                                               |
-| `markdown`      | The page as Markdown, read from the page rather than the PDF: `inline` returns it in the result, `beside` writes a `.md` next to the file, `only` writes the `.md` and no file. Adds `page`: title, address, capture time, language, headings. Pictures are left out. |
-| `fileName`      | The file name inside `outputPath`, as a template: `{n}` (place in `urls`), `{host}`, `{name}` (the suggested name), `{date}`, `{time}`, `{ext}` (added when left out). A `/` makes a subdirectory.                                                                    |
-| `waitSeconds`   | How long to wait for a browser to connect. 0 fails immediately.                                                                                                                                                                                                       |
+| Argument        | Meaning                                                                                                                                                                                                                                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `browserId`     | Which browser. Optional when only one is connected.                                                                                                                                                                                                                        |
+| `tabId`         | A tab from `list_tabs`. Give one of `tabId`, `url` or `urls`.                                                                                                                                                                                                              |
+| `url`           | Opens a background tab there, captures it, closes it again.                                                                                                                                                                                                                |
+| `urls`          | Up to 50 addresses, captured one at a time into `outputPath`, which is then a directory. A page that fails is reported and the rest are captured.                                                                                                                          |
+| `windowId`      | Which window to open `url` in. Ignored with `tabId`.                                                                                                                                                                                                                       |
+| `format`        | `pdf` (default), `png`, `jpeg`.                                                                                                                                                                                                                                            |
+| `pageSize`      | PDF only. `a4` (default) and `letter` slice onto printable sheets with a half-inch margin; `auto` is one page the size of the capture.                                                                                                                                     |
+| `quality`       | JPEG only, 0.1 to 1.                                                                                                                                                                                                                                                       |
+| `videoHandling` | `frame` keeps a video's paused frame, `blank` leaves its area empty.                                                                                                                                                                                                       |
+| `colorScheme`   | Which of a page's two themes to capture: `auto` (default, whatever the browser shows), `light`, `dark`.                                                                                                                                                                    |
+| `captureWidth`  | Lay the page out at a sheet's width first, so the PDF prints at 1:1: `window` (default), `a4`, `letter`.                                                                                                                                                                   |
+| `openEditor`    | Also leave the capture open in a Page Scanner editor tab.                                                                                                                                                                                                                  |
+| `outputPath`    | A file, or a directory to keep the suggested name. A leading `~` is home. Defaults to the cwd, or `~/Downloads` when that is `/` or read-only, as under Claude Desktop.                                                                                                    |
+| `hide`          | Clutter to hide before the capture and put back after: any of `ads`, `consent`, `chat`, `overlays`; `[]` hides nothing. Left out, the extension's own settings decide, and they hide all four unless the user changed them. The result counts what was hidden as `hidden`. |
+| `markdown`      | The page as Markdown, read from the page rather than the PDF: `inline` returns it in the result, `beside` writes a `.md` next to the file, `only` writes the `.md` and no file. Adds `page`: title, address, capture time, language, headings. Pictures are left out.      |
+| `fileName`      | The file name inside `outputPath`, as a template: `{n}` (place in `urls`), `{host}`, `{name}` (the suggested name), `{date}`, `{time}`, `{ext}` (added when left out). A `/` makes a subdirectory.                                                                         |
+| `waitSeconds`   | How long to wait for a browser to connect. 0 fails immediately.                                                                                                                                                                                                            |
 
 Returns the absolute `path`, `width` and `height` in CSS pixels, `mode` (`vector` or `raster`),
 `selectableText`, and `truncated` (`null` when whole; otherwise what the page measured, what was
@@ -72,21 +85,55 @@ and `sameAddress`. For pictures: `regions` (`x`, `y`, `width`, `height` in pixel
 capture), `changedFraction`, both sides' sizes, and `path`, the outlined picture, or `null` when
 nothing changed. No browser is needed: both captures are already on disk.
 
+### `extract_design`
+
+| Argument      | Meaning                                                                                                                                                                                                                                                                                      |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `browserId`   | Which browser. Optional when only one is connected.                                                                                                                                                                                                                                          |
+| `tabId`       | A tab from `list_tabs`, read as it stands. Give one of `tabId`, `url`, `urls` or `crawl`.                                                                                                                                                                                                    |
+| `url`         | Opens a background tab there, reloads it under each color scheme, reads it and closes it again.                                                                                                                                                                                              |
+| `urls`        | Up to 20 pages of one site, read one after another and written as one design; `audit.md` lists what only one page uses.                                                                                                                                                                      |
+| `crawl`       | A start address: its same-origin links are followed, one page per kind, honoring `robots.txt` and `nofollow`, never a log-out or delete address; a page that lands on another site or a page already read is left out.                                                                       |
+| `maxPages`    | With `crawl`, the most pages to read. Default 10, at most 50.                                                                                                                                                                                                                                |
+| `depth`       | With `crawl`, how many links from the start. Default 2, at most 5.                                                                                                                                                                                                                           |
+| `outputPath`  | The directory. Defaults to `design-<host>` in the working directory, or in `~/Downloads` as for `scan_page`.                                                                                                                                                                                 |
+| `minUses`     | How many elements must use a value before it becomes an inferred token. Default 2.                                                                                                                                                                                                           |
+| `components`  | `true` to find the components as well: repeated structures and controls, their variants and hover and focus states, written to `components.json` and `components.md`, and `catalog.pdf` with each variant cut from the page as vector artwork. Each page is scanned too, so it takes longer. |
+| `waitSeconds` | How long to wait for a browser to connect. 0 fails immediately.                                                                                                                                                                                                                              |
+
+Returns `directory`, `files` (each file's path), `tokens` (counts by group), `declared`,
+`unusedDeclared` (declared colors nothing was drawn in, left out), `contrast` (`pairs`, `failing`
+below WCAG AA, `overImage` left to the eye), `nearlyEqual`, `onePage` (values only one page uses)
+and `darkDiffers`. `pages` has each page's `ok`, and `message` when it was not read; in a crawl,
+`landed` and `left` (`elsewhere` or `duplicate`) say where a page went and why it was left out,
+and `crawl` has `robots` and the links `skipped`, by reason. With `components`, `components` has
+the counts of components and variants.
+
 ## Command line
 
 ```
+page-scanner install  [--extension-id <id>]... [--browser-dir <dir>]... [--node <path>] [--json]
+page-scanner uninstall [--browser-dir <dir>]... [--json]
 page-scanner pair     [--port <n>] [--rotate] [--wait <s>=120] [--no-wait] [--json]
 page-scanner status   [--json]
 page-scanner browsers [--json]
 page-scanner tabs     [--browser <id|label>] [--wait <s>=30] [--json]
 page-scanner scan     (--url <u>... | --urls <file|-> | --tab <id>) [--window <id>]
                       [--name <template>] [--markdown beside|only]
+                      [--hide <kinds>|all|none]
                       [--browser <id|label>]
                       [--format pdf|png|jpeg=pdf] [--page-size auto|a4|letter=a4]
                       [--quality <0-1>] [--video frame|blank]
                       [--scheme auto|light|dark]
                       [--page-width window|a4|letter] [--open-editor]
                       [--out <file|dir>] [--wait <s>=30] [--timeout <s>=120] [--json]
+page-scanner diff     <old> <new> [--out <file>] [--json]
+page-scanner verify   <file> [--record <file.integrity.json>] [--json]
+page-scanner design   (--url <u>... | --urls <file|-> | --tab <id> |
+                       --crawl <u> [--max-pages <n>=10] [--depth <n>=2])
+                      [--components] [--window <id>]
+                      [--out <dir>] [--min-uses <n>=2] [--browser <id|label>]
+                      [--wait <s>=30] [--timeout <s>=120] [--json]
 page-scanner serve    [--daemon] [--idle <min>]
 page-scanner stop     [--json]
 ```
@@ -123,8 +170,8 @@ the command line's `captureWidth`, `--scheme` its `colorScheme`, `--video` its `
 | 1    | the browser was reached and the work failed                                   |
 | 2    | the arguments were wrong                                                      |
 | 3    | no usable browser: none connected, several connected, or the one named is not |
-| 4    | not paired                                                                    |
+| 4    | not set up: no pairing on this machine (`install` makes one)                  |
 | 5    | the daemon would not start                                                    |
 
 Everything the pairing writes lives in `~/.page-scanner` (`config.json`, `daemon.json`,
-`daemon.log`), or under `$PAGE_SCANNER_HOME`.
+`daemon.log`, and the helper in `native-host/`), or under `$PAGE_SCANNER_HOME`.

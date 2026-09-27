@@ -1,8 +1,8 @@
 {
   "name": "page-scanner",
   "displayName": "Page Scanner",
-  "version": "1.0.0",
-  "description": "Capture a web page from your own Chrome as a PDF whose text stays text, or as a PNG or JPEG. The MCP server that lists your tabs and captures one, and the skill that tells the agent when and how to use it.",
+  "version": "1.2.1",
+  "description": "Capture a web page from your own Chrome as a PDF whose text stays text, or as a PNG, a JPEG or Markdown. The MCP server that lists your tabs and captures one, the skill that tells the agent when and how to use it, and a skill that writes a site's DESIGN.md from what it measured.",
   "author": { "name": "sbd530", "url": "https://github.com/sbd530" },
   "homepage": "https://docs.pagescanner.app/mcp",
   "repository": "https://github.com/sbd530/page-scanner-skills",
