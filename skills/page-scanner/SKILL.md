@@ -1,6 +1,6 @@
 ---
 name: page-scanner
-description: Capture a web page from the user's own signed-in Chrome as a PDF whose text stays selectable and searchable, as a PNG or JPEG, or as Markdown text, through the Page Scanner extension's MCP tools (list_browsers, list_tabs, scan_page, diff_captures, extract_design, install) or the page-scanner command. Use when the user asks to set up Page Scanner, or to save, scan, capture, archive or print a web page or an open tab to PDF, wants a full-page screenshot, needs a document from a page behind a login, wants a list of pages captured, once or on a schedule, or wants to know what changed on a page since an earlier capture, or wants a page's design tokens, a consistency audit or a contrast check.
+description: Capture a web page from the user's own signed-in Chrome as a PDF whose text stays selectable and searchable, as a PNG or JPEG, or as Markdown text, through the Page Scanner extension's MCP tools (list_browsers, list_tabs, scan_page, diff_captures, extract_design, check_quotes, install) or the page-scanner command. Use when the user asks to set up Page Scanner, or to save, scan, capture, archive or print a web page or an open tab to PDF, wants a full-page screenshot, needs a document from a page behind a login, wants a list of pages captured, once or on a schedule, or wants to know what changed on a page since an earlier capture, or wants a page's design tokens, a consistency audit or a contrast check, or needs to check that what it quotes from a page is in the capture as written.
 license: Apache-2.0
 compatibility: Google Chrome with the Page Scanner extension, Node.js 24 or newer, and either the @page-scanner/mcp server registered with the agent or the @page-scanner/cli command (npx works for both). Local machine only; the connection is to 127.0.0.1.
 metadata:
@@ -14,7 +14,7 @@ metadata:
 Page Scanner captures a whole web page, top to bottom, in the Chrome the user is already signed in
 to, and writes a file: a PDF whose text is real text, or a PNG or JPEG. The capture goes through
 Chrome's own print pipeline, so a page behind a login is captured as the user sees it, and no
-second browser is started. You reach it through seven MCP tools, or the `page-scanner` command when
+second browser is started. You reach it through eight MCP tools, or the `page-scanner` command when
 you only have a shell. Both use the same pairing and the same background daemon.
 
 ## 1. Check the connection first
@@ -68,25 +68,35 @@ Give exactly one of `tabId`, `url` or `urls`.
 
 `scan_page` with the target and, as the task needs them:
 
-| Want                                      | Set                                                                             |
-| ----------------------------------------- | ------------------------------------------------------------------------------- |
-| A PDF to read, search or copy from        | nothing; `format` defaults to `pdf`                                             |
-| A PDF that prints at full size            | `captureWidth: "a4"` (or `"letter"`) with the same `pageSize`                   |
-| One long page instead of sheets           | `pageSize: "auto"`                                                              |
-| A picture                                 | `format: "png"`, or `"jpeg"` with `quality` 0.1 to 1                            |
-| The dark theme of a page that has two     | `colorScheme: "dark"` (or `"light"`)                                            |
-| A video's area empty rather than a frame  | `videoHandling: "blank"`                                                        |
-| The user to crop or mark it up afterwards | `openEditor: true`; you cannot crop, the editor can                             |
-| To read the page's text yourself          | `markdown: "inline"`, far more reliable than reading the PDF                    |
-| The text as a `.md` file for the user     | `markdown: "beside"`, or `"only"` for no PDF                                    |
-| The file somewhere specific               | `outputPath`: a file path, or a directory to keep the browser's suggested name  |
-| An article without ads, banners, pop-ups  | `hide: ["ads", "consent", "chat", "overlays"]`, or the ones that are in the way |
-| A record of how the page looked           | `hide: []`: nothing hidden, whatever the user's settings say                    |
+| Want                                           | Set                                                                             |
+| ---------------------------------------------- | ------------------------------------------------------------------------------- |
+| A PDF to read, search or copy from             | nothing; `format` defaults to `pdf`                                             |
+| A PDF that prints at full size                 | `captureWidth: "a4"` (or `"letter"`) with the same `pageSize`                   |
+| One long page instead of sheets                | `pageSize: "auto"`                                                              |
+| A picture                                      | `format: "png"`, or `"jpeg"` with `quality` 0.1 to 1                            |
+| The dark theme of a page that has two          | `colorScheme: "dark"` (or `"light"`)                                            |
+| A video's area empty rather than a frame       | `videoHandling: "blank"`                                                        |
+| The user to crop or mark it up afterwards      | `openEditor: true`; you cannot crop, the editor can                             |
+| To read the page's text yourself               | `markdown: "inline"`, far more reliable than reading the PDF                    |
+| The text to fit your context                   | `textOptions: { links: "text", maxChars: … }`; `scope: "main"` for the article  |
+| A signed-in page's text, with no personal data | `markdown: "only"`, `textOptions: { redact: true }`: values become `⟦EMAIL 1⟧`  |
+| The text as a `.md` file for the user          | `markdown: "beside"`, or `"only"` for no PDF                                    |
+| The file somewhere specific                    | `outputPath`: a file path, or a directory to keep the browser's suggested name  |
+| An article without ads, banners, pop-ups       | `hide: ["ads", "consent", "chat", "overlays"]`, or the ones that are in the way |
+| A record of how the page looked                | `hide: []`: nothing hidden, whatever the user's settings say                    |
+| To look at the page, not only read it          | `slices: true`, then open `slices[].path`: each is sized so you can read it     |
+| The page's charts, diagrams and screenshots    | `pictureFiles: true`, then open `pictures[].path`                               |
+| The quotes you took from it, marked in its PDF | `highlight: [...]`, the quotes `check_quotes` found, as written                 |
 
 `outputPath` defaults to the current working directory, or to `~/Downloads` where that is `/` or
 cannot be written, which is the case under Claude Desktop; a leading `~` is the home directory.
 When the user named a place, pass that path. `captureWidth` matters for printing: a page captured at a 1280 px window is scaled
 to 55 % on A4, which puts 16 px body text at 6.5 pt; laid out at A4 width first it lands at 12 pt.
+
+Use `redact` when the page is the user's own (a mail, an account, a ticket) and its text will
+be sent on to a model: email addresses, phone numbers, cards, IBANs, ID numbers, IP addresses,
+keys and tokens become numbered placeholders before the text leaves the browser, and
+`page.redacted` counts them. Quote a placeholder as it is; never guess the value behind it.
 
 `hide` takes things out of the page for the scan, so say so when you report: the result's
 `hidden` counts them by kind. Do not hide anything from a page kept as evidence of what it showed.
@@ -107,13 +117,28 @@ The result carries the absolute `path`, `width` and `height` in CSS pixels, `mod
   page can raise the height's limit to 120,000 or 240,000). Say so; do not present the file as
   complete.
 - Quote the path back. The file is on disk; nothing is returned inline.
+- `citation`, when present, is what the page declares about itself (authors, date, journal, DOI),
+  copied from its markup and never checked. Cite from it as "the page lists", and say when a field
+  is missing rather than filling it in.
+- `translated`, when present, means the user's browser had machine-translated the page before
+  the scan: the text is Chrome's or Edge's translation, not the page's own words. Say so when you
+  quote it, and never present it as what the author wrote.
+- Before you quote the page in an answer (a sentence, a price, a date, a name), check the quotes
+  with `check_quotes`: the capture as `path` (the `.md` of `markdown` `beside` or `only`) or
+  `markdown` (the text of `inline`), and the quotes as you will write them. Use what `allFound`
+  and each quote's `line` and `section` say: cite the section, and for a quote with `match`
+  `none`, fix it from `near` (where the capture parts from your words) or leave it out. A `loose`
+  match means your quote has other quote marks, dashes or case than the page; copy the page's.
+  Do not quote anything the check did not find as the page's words.
 
 ## 5. What changed since last time
 
 To tell the user what changed on a page since an earlier capture, capture it again the same way,
 with `markdown: "beside"` (or `"only"`), and call `diff_captures` with the older and the newer
 `.md`. Report `changed`, and when it is true, the passages from `unified` in plain words, not the
-diff syntax. Two PNGs work too, and give a picture with the changed regions outlined, but content
+diff syntax. When the user watches one part of a page (the plans table, a clause of the terms),
+pass its heading as `section` (`"Pricing > Pro"` for one under another) so banners and rails
+around it do not count; `--section` on the command line. Two PNGs work too, and give a picture with the changed regions outlined, but content
 that moved shows as changed below the move, so prefer the text. When the user wants this on a
 schedule, give them `page-scanner scan --urls` with `--markdown beside` and `page-scanner diff`,
 which exits 1 when something changed.
@@ -166,6 +191,7 @@ npx @page-scanner/cli browsers --json
 npx @page-scanner/cli tabs --json
 npx @page-scanner/cli scan --tab <id> --out ~/Desktop/ --json
 npx @page-scanner/cli scan --url https://example.com/doc --page-width a4 --out ./doc.pdf --json
+npx @page-scanner/cli check ./doc.md "the sentence you will quote" --json
 ```
 
 Exit codes: 0 success, 1 the browser was reached and the work failed, 2 wrong arguments, 3 no
