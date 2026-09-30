@@ -140,8 +140,12 @@ diff syntax. When the user watches one part of a page (the plans table, a clause
 pass its heading as `section` (`"Pricing > Pro"` for one under another) so banners and rails
 around it do not count; `--section` on the command line. Two PNGs work too, and give a picture with the changed regions outlined, but content
 that moved shows as changed below the move, so prefer the text. When the user wants this on a
-schedule, give them `page-scanner scan --urls` with `--markdown beside` and `page-scanner diff`,
-which exits 1 when something changed.
+schedule, do not offer to check it yourself each time: point them at
+https://docs.pagescanner.app/cli/watch/, a script for cron or launchd that runs
+`page-scanner scan --markdown only --main-content --hide all`, compares with the last capture
+through `page-scanner diff` (which exits 1 when something changed, with `--section` for one part)
+and keeps a dated copy of each change. Page Scanner has no scheduler of its own, and nothing in it
+judges whether a change matters: read the diff with the user.
 
 ## 6. A page's design
 

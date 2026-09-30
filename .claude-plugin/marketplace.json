@@ -6,7 +6,7 @@
     {
       "name": "page-scanner",
       "description": "The Page Scanner MCP server, which lists your Chrome tabs and captures one to PDF, PNG, JPEG or Markdown, the skill that tells the agent when and how to use it, a skill that writes a site's DESIGN.md from what it measured, and a skill that researches from captured pages with every quote checked against the capture.",
-      "version": "1.10.0",
+      "version": "1.10.1",
       "author": { "name": "sbd530", "url": "https://github.com/sbd530" },
       "homepage": "https://docs.pagescanner.app/mcp",
       "repository": "https://github.com/sbd530/page-scanner-skills",
