@@ -87,6 +87,8 @@ Give exactly one of `tabId`, `url` or `urls`.
 | To look at the page, not only read it          | `slices: true`, then open `slices[].path`: each is sized so you can read it     |
 | The page's charts, diagrams and screenshots    | `pictureFiles: true`, then open `pictures[].path`                               |
 | The quotes you took from it, marked in its PDF | `highlight: [...]`, the quotes `check_quotes` found, as written                 |
+| Its accessibility problems, marked on the page | `accessibility: true`, then `accessibility.pdfPath`; say it is automated only   |
+| A table on the page as data, row by row        | `tables: "inline"`, then `tables.tables[].rows`; `"beside"` for a JSON file     |
 
 `outputPath` defaults to the current working directory, or to `~/Downloads` where that is `/` or
 cannot be written, which is the case under Claude Desktop; a leading `~` is the home directory.
@@ -180,6 +182,13 @@ user to check by eye; say so rather than calling it a pass or a fail.
   Chrome's own notice and cannot be hidden. It is expected; mention it if the user asks.
 - **A background tab gets 30 seconds to load.** A page that never settles fails on time; a `tabId`
   of a tab that has finished loading avoids that.
+- **`status: "running"`** means the capture is still going in the browser and your client stopped
+  waiting for it. Call `scan_page` (or `extract_design`) again with exactly the same arguments to
+  wait for the result; do not change them and do not scan that tab another way meanwhile. For a
+  very tall page, such as a long chat, pass a larger `timeoutSeconds` (default 120).
+- **"A capture of tab N is still running"**: an earlier capture of that tab, maybe one whose call
+  timed out, has not finished. Wait and try again; the browser lets one capture drive a tab at a
+  time.
 - **A JPEG or PNG of a very tall page** is one bitmap; for a long page the PDF is the smaller,
   searchable file.
 
